@@ -1,31 +1,12 @@
-const { db } = require('../database/db');
-
-const TECH_QUIZ_QUESTIONS = {
-  cloud: [
-    {
-      question: "What is the AWS service used for serverless computing?",
-      correct_answer: "Lambda",
-      incorrect_answers: ["EC2", "ECS", "Fargate"],
-      difficulty: "medium"
-    },
-    // Add more cloud questions...
-  ],
-  devops: [
-    {
-      question: "Which CI/CD tool is developed by Jenkins?",
-      correct_answer: "Jenkins Pipeline",
-      incorrect_answers: ["Travis CI", "CircleCI", "GitHub Actions"],
-      difficulty: "medium"
-    },
-    // Add more DevOps questions...
-  ],
-  // Add more categories...
-};
+const { dbOps } = require('../database/db');
 
 async function getTechQuizQuestion(category) {
-  const questions = TECH_QUIZ_QUESTIONS[category];
-  const question = questions[Math.floor(Math.random() * questions.length)];
+  const question = await dbOps.getRandomQuestion(category);
   
+  if (!question) {
+    throw new Error(`No questions available for category: ${category}`);
+  }
+
   return {
     ...question,
     options: [...question.incorrect_answers, question.correct_answer]
@@ -33,12 +14,18 @@ async function getTechQuizQuestion(category) {
   };
 }
 
-async function updatePoints(userId, points, type) {
+async function updatePoints(userId, points, correct) {
+  await dbOps.updateUserProgress(userId, correct);
+  // Update house points if user is sorted
+  await updateHousePoints(userId, points);
+}
+
+async function updateHousePoints(userId, points) {
   return new Promise((resolve, reject) => {
     db.run(
       `UPDATE house_members 
-       SET points = points + ?, 
-           ${type} = ${type} + ? 
+       SET points = points + ?,
+           quiz_score = quiz_score + ?
        WHERE user_id = ?`,
       [points, points, userId],
       (err) => {
