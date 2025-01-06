@@ -1,71 +1,109 @@
-# Bablu Discord Bot - Setup Guide
+# Bablu - Discord Bot for CloudCraft Community 🤖
 
-## Prerequisites
-1. Node.js 16.9.0 or higher
-2. A Discord account
-3. A Replit account (for hosting)
+A feature-rich Discord bot designed for the CloudCraft community, combining Harry Potter-themed elements with tech learning features.
 
-## Discord Bot Setup
-1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
-2. Click "New Application" and name it "Bablu"
-3. Go to the "Bot" section and click "Add Bot"
-4. Under the bot's username, click "Reset Token" and copy the new token
-5. Enable these "Privileged Gateway Intents":
-   - Presence Intent
-   - Server Members Intent
-   - Message Content Intent
-6. Go to OAuth2 > URL Generator
-7. Select these scopes:
-   - bot
-   - applications.commands
-8. Select these bot permissions:
-   - Read Messages/View Channels
-   - Send Messages
-   - Manage Messages
-   - Embed Links
-   - Attach Files
-   - Read Message History
-   - Add Reactions
-   - Use Slash Commands
-9. Copy the generated URL and use it to invite the bot to your server
+## Features ✨
 
-## Environment Setup
-Create a `.env` file with these variables:
-```env
-DISCORD_TOKEN=your_bot_token
-CLIENT_ID=your_application_id
-GUILD_ID=your_server_id
-GITHUB_TOKEN=your_github_token
-```
+### House System 🏰
+- Sorting ceremony with house selection
+- House points tracking system
+- Points earned through:
+  - Quiz participation
+  - Server activity
+  - Hackathon wins
 
-## Hosting on Replit
-1. Create a new Repl
-2. Import from GitHub or upload the bot files
-3. Add the environment variables in Replit's Secrets tab
-4. Click "Run" to start the bot
+### Tech Quiz System 📚
+- Categories:
+  - Cloud Computing
+  - DevOps
+  - Kubernetes
+  - Docker
+- Difficulty levels with varying point rewards
+- Interactive quiz interface
 
-## Keep Bot Online 24/7
-1. Go to [UptimeRobot](https://uptimerobot.com)
-2. Create a new account or login
-3. Add a new monitor:
-   - Monitor Type: HTTP(s)
-   - Friendly Name: Bablu Bot
-   - URL: Your Replit project URL
-   - Monitoring Interval: 5 minutes
+### Fun Commands 🎮
+- Magic 8-ball predictions
+- Random memes
+- Trivia questions
 
-## Deploy Commands
-Run this command to deploy slash commands:
-```bash
-node deploy-commands.js
-```
+## Command List 🎯
 
-## Testing the Bot
-1. Type `/hello` in your server
-2. The bot should respond with "Hello from Bablu! 👋"
-3. Try `/sortinghat` to test the house sorting system
+### House System
+\`\`\`
+/sortinghat - Start house sorting ceremony
+/housepoints - View house points leaderboard
+\`\`\`
 
-## Troubleshooting
-- If commands don't work, ensure you've run deploy-commands.js
-- Check if all required intents are enabled
-- Verify the bot has proper permissions in your server
-- Check Replit console for any error messages
+### Learning
+\`\`\`
+/techquiz category:[cloud|devops|kubernetes|docker] - Take a technical quiz
+/trivia - Answer random trivia questions
+\`\`\`
+
+### Fun
+\`\`\`
+/8ball question:[your question] - Ask the magic 8-ball
+/meme - Get a random meme
+\`\`\`
+
+### Utility
+\`\`\`
+/help - Show all available commands
+/schedule name:[event] time:[YYYY-MM-DD HH:mm] - Schedule an event
+\`\`\`
+
+## Setup Guide 🚀
+
+### Prerequisites 📋
+- Node.js 16.9.0 or higher
+- Discord Bot Token
+- Discord Server with admin privileges
+
+### Bot Setup Steps
+
+1. **Create Discord Application**
+   - Go to [Discord Developer Portal](https://discord.com/developers/applications)
+   - Click "New Application" and name it
+   - Go to "Bot" section and create a bot
+   - Enable these Privileged Gateway Intents:
+     - Presence Intent
+     - Server Members Intent
+     - Message Content Intent
+
+2. **Configure Environment**
+   Create a \`.env\` file:
+   \`\`\`
+   DISCORD_TOKEN=your_bot_token
+   CLIENT_ID=your_application_id
+   GUILD_ID=your_server_id
+   \`\`\`
+
+3. **Install Dependencies**
+   \`\`\`bash
+   npm install
+   \`\`\`
+
+4. **Deploy Commands**
+   \`\`\`bash
+   node deploy-commands.js
+   \`\`\`
+
+5. **Start the Bot**
+   \`\`\`bash
+   npm start
+   \`\`\`
+
+### Required Bot Permissions
+- Read Messages/View Channels
+- Send Messages
+- Embed Links
+- Attach Files
+- Read Message History
+- Add Reactions
+- Use Slash Commands
+
+## Support 💬
+For support, join our Discord server or open an issue in the repository.
+
+## License 📄
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
