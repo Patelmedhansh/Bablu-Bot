@@ -1,4 +1,4 @@
-const { dbOps } = require('../database/db');
+const { db, dbOps } = require('../database/db');
 
 async function getTechQuizQuestion(category) {
   const question = await dbOps.getRandomQuestion(category);
@@ -15,25 +15,22 @@ async function getTechQuizQuestion(category) {
 }
 
 async function updatePoints(userId, points, correct) {
-  await dbOps.updateUserProgress(userId, correct);
-  // Update house points if user is sorted
-  await updateHousePoints(userId, points);
-}
-
-async function updateHousePoints(userId, points) {
-  return new Promise((resolve, reject) => {
-    db.run(
+  try {
+    // Update user progress
+    await dbOps.updateUserProgress(userId, correct);
+    
+    // Update house points
+    await db.run(
       `UPDATE house_members 
        SET points = points + ?,
            quiz_score = quiz_score + ?
        WHERE user_id = ?`,
-      [points, points, userId],
-      (err) => {
-        if (err) reject(err);
-        resolve();
-      }
+      [points, points, userId]
     );
-  });
+  } catch (error) {
+    console.error('Error updating points:', error);
+    throw new Error('Failed to update points');
+  }
 }
 
 module.exports = {
