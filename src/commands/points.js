@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { dbOps } = require('../database/db');
+const { db, dbOps } = require('../database/db');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -11,7 +11,7 @@ module.exports = {
       const [userStats, houseStats] = await Promise.all([
         dbOps.getUserStats(interaction.user.id),
         new Promise((resolve, reject) => {
-          interaction.client.db.get(
+          db.get(
             'SELECT house, points, quiz_score, activity_score, hackathon_wins FROM house_members WHERE user_id = ?',
             [interaction.user.id],
             (err, row) => {
