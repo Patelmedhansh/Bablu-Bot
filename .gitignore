@@ -7,24 +7,28 @@ package-lock.json
 .env.local
 .env.*.local
 
-# Database
-*.db
-*.db-journal
-
 # Logs
 logs
 *.log
 npm-debug.log*
 
-# Editor directories and files
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Database
+*.sqlite
+*.sqlite3
+bot.db
+
+# IDE
 .idea/
 .vscode/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.swp
+*.swo
 
-# Operating System
+# OS
 .DS_Store
 Thumbs.db
