@@ -6,9 +6,25 @@ const db = new sqlite3.Database('bot.db');
 
 function initDatabase() {
   db.serialize(() => {
-    // Create tables
-    Object.values(TABLES).forEach(tableQuery => {
-      db.run(tableQuery);
+    // Enable foreign keys
+    db.run('PRAGMA foreign_keys = ON');
+
+    // Create tables in correct order (due to foreign key constraints)
+    const tableOrder = [
+      'QUIZ_QUESTIONS',
+      'USER_PROGRESS',
+      'QUIZ_HISTORY',
+      'HOUSE_MEMBERS'
+    ];
+
+    tableOrder.forEach(tableName => {
+      db.run(TABLES[tableName], err => {
+        if (err) {
+          console.error(`Error creating ${tableName} table:`, err);
+        } else {
+          console.log(`${tableName} table created successfully`);
+        }
+      });
     });
 
     // Populate quiz questions if empty
@@ -32,13 +48,30 @@ function initDatabase() {
               q.question,
               q.correct_answer,
               JSON.stringify(q.incorrect_answers),
-              q.difficulty
+              q.difficulty,
+              err => {
+                if (err) console.error('Error inserting question:', err);
+              }
             );
           });
         });
 
         stmt.finalize();
         console.log('Quiz questions populated successfully');
+      }
+    });
+  });
+
+  // Verify tables were created
+  const tables = ['quiz_questions', 'user_progress', 'quiz_history', 'house_members'];
+  tables.forEach(table => {
+    db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`, [table], (err, row) => {
+      if (err) {
+        console.error(`Error checking ${table} table:`, err);
+      } else if (!row) {
+        console.error(`${table} table was not created properly`);
+      } else {
+        console.log(`${table} table exists`);
       }
     });
   });
