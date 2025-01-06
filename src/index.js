@@ -10,7 +10,8 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessageReactions,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildPresences
   ]
 });
 
@@ -23,4 +24,15 @@ initDatabase();
 loadCommands(client);
 loadEvents(client);
 
-client.login(process.env.DISCORD_TOKEN);
+// Handle errors
+client.on('error', error => {
+  console.error('Discord client error:', error);
+});
+
+process.on('unhandledRejection', error => {
+  console.error('Unhandled promise rejection:', error);
+});
+
+client.login(process.env.DISCORD_TOKEN).catch(error => {
+  console.error('Failed to login:', error);
+});
