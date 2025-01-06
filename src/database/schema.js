@@ -32,6 +32,18 @@ const TABLES = {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(question_id) REFERENCES quiz_questions(id)
       )
+    `,
+  
+    HOUSE_MEMBERS: `
+      CREATE TABLE IF NOT EXISTS house_members (
+        user_id TEXT PRIMARY KEY,
+        house TEXT NOT NULL,
+        points INTEGER DEFAULT 0,
+        quiz_score INTEGER DEFAULT 0,
+        activity_score INTEGER DEFAULT 0,
+        hackathon_wins INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
     `
   };
   
