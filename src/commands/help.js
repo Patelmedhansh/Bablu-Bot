@@ -13,7 +13,8 @@ module.exports = {
           name: '🏰 House System',
           value: 
             '`/sortinghat` - Get sorted into your house\n' +
-            '`/housepoints` - View house points leaderboard'
+            '`/housepoints` - View house points leaderboard\n' +
+            '`/points` - Check your personal points and statistics'
         },
         {
           name: '📚 Learning',
