@@ -1,6 +1,7 @@
 Bablu - Discord Bot for CloudCraft Community
 
 Bablu is a feature-rich Discord bot designed for the CloudCraft community, blending Harry Potter-themed elements with tech learning features to create an engaging and educational experience.
+![Bablu Bot Screenshot](./bablu.jpg)
 
 Features ✨
 	•	House System: Participate in a sorting ceremony, join a house, and earn points through various activities.
