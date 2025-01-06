@@ -23,18 +23,17 @@ module.exports = {
     try {
       const category = interaction.options.getString('category');
       const question = await getTechQuizQuestion(category);
-      const filter = i => i.user.id === interaction.user.id;
-
+      
       // Create buttons for options
-      const buttons = question.options.map((option, index) => {
-        return new ButtonBuilder()
-          .setCustomId(`quiz_${index}`)
-          .setLabel(option)
-          .setStyle(ButtonStyle.Primary);
-      });
-
-      // Create action row with buttons
-      const row = new ActionRowBuilder().addComponents(buttons);
+      const row = new ActionRowBuilder()
+        .addComponents(
+          question.options.map((option, index) => 
+            new ButtonBuilder()
+              .setCustomId(`quiz_${index}`)
+              .setLabel(option)
+              .setStyle(ButtonStyle.Primary)
+          )
+        );
 
       const response = await interaction.editReply({
         embeds: [{
@@ -51,54 +50,84 @@ module.exports = {
 
       try {
         const choice = await response.awaitMessageComponent({ 
-          filter, 
+          filter: i => i.user.id === interaction.user.id,
           time: 45000 
         });
 
-        const selectedAnswer = question.options[parseInt(choice.customId.split('_')[1])];
+        const selectedIndex = parseInt(choice.customId.split('_')[1]);
+        const selectedAnswer = question.options[selectedIndex];
         const isCorrect = selectedAnswer === question.correct_answer;
-        
+        let points = 0;
+
         if (isCorrect) {
-          const points = question.difficulty === 'hard' ? 15 : 
-                        question.difficulty === 'medium' ? 10 : 5;
+          points = question.difficulty === 'hard' ? 15 : 
+                  question.difficulty === 'medium' ? 10 : 5;
           await updatePoints(interaction.user.id, points, true);
         }
 
-        // Disable all buttons after answer
-        buttons.forEach(button => button.setDisabled(true));
-        if (isCorrect) {
-          buttons[parseInt(choice.customId.split('_')[1])].setStyle(ButtonStyle.Success);
-        } else {
-          buttons[parseInt(choice.customId.split('_')[1])].setStyle(ButtonStyle.Danger);
-          // Highlight correct answer
-          const correctIndex = question.options.indexOf(question.correct_answer);
-          buttons[correctIndex].setStyle(ButtonStyle.Success);
-        }
+        // Create new buttons with updated styles
+        const updatedRow = new ActionRowBuilder()
+          .addComponents(
+            question.options.map((option, index) => {
+              const button = new ButtonBuilder()
+                .setCustomId(`quiz_${index}`)
+                .setLabel(option)
+                .setDisabled(true);
+
+              if (index === selectedIndex) {
+                button.setStyle(isCorrect ? ButtonStyle.Success : ButtonStyle.Danger);
+              } else if (option === question.correct_answer) {
+                button.setStyle(ButtonStyle.Success);
+              } else {
+                button.setStyle(ButtonStyle.Secondary);
+              }
+
+              return button;
+            })
+          );
 
         await choice.update({
           embeds: [{
             title: isCorrect ? '✨ Correct!' : '❌ Incorrect',
-            description: `${isCorrect ? 
+            description: isCorrect ? 
               `Well done! You earned ${points} points!` : 
-              `The correct answer was: ${question.correct_answer}`}`,
+              `The correct answer was: ${question.correct_answer}`,
             color: isCorrect ? 0x2ecc71 : 0xe74c3c
           }],
-          components: [new ActionRowBuilder().addComponents(buttons)]
+          components: [updatedRow]
         });
-      } catch (e) {
-        // Disable all buttons on timeout
-        buttons.forEach(button => button.setDisabled(true));
-        await interaction.editReply({
-          embeds: [{
-            title: '⏰ Time\'s up!',
-            description: `The correct answer was: ${question.correct_answer}`,
-            color: 0xe74c3c
-          }],
-          components: [new ActionRowBuilder().addComponents(buttons)]
-        });
+
+      } catch (error) {
+        if (error.name === 'Error [InteractionCollectorError]') {
+          // Handle timeout
+          const timeoutRow = new ActionRowBuilder()
+            .addComponents(
+              question.options.map((option) => {
+                const button = new ButtonBuilder()
+                  .setCustomId(`quiz_${question.options.indexOf(option)}`)
+                  .setLabel(option)
+                  .setDisabled(true)
+                  .setStyle(option === question.correct_answer ? 
+                    ButtonStyle.Success : ButtonStyle.Secondary);
+                return button;
+              })
+            );
+
+          await interaction.editReply({
+            embeds: [{
+              title: '⏰ Time\'s up!',
+              description: `The correct answer was: ${question.correct_answer}`,
+              color: 0xe74c3c
+            }],
+            components: [timeoutRow]
+          });
+        } else {
+          console.error('Quiz error:', error);
+          await interaction.editReply('An error occurred while processing your answer.');
+        }
       }
     } catch (error) {
-      console.error(error);
+      console.error('Quiz setup error:', error);
       await interaction.editReply('Failed to fetch a quiz question. Try again later!');
     }
   }
