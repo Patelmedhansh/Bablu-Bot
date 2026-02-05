@@ -13,10 +13,10 @@ function initDatabase() {
     const tableOrder = [
       'QUIZ_QUESTIONS',
       'USER_PROGRESS',
+      'USERS', // Add this line
       'QUIZ_HISTORY',
       'HOUSE_MEMBERS'
     ];
-
     tableOrder.forEach(tableName => {
       db.run(TABLES[tableName], err => {
         if (err) {

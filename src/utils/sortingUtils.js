@@ -1,82 +1,116 @@
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-const HOUSE_EMOJIS = {
-  '🦁': 'Gryffindor',
-  '🐍': 'Slytherin',
-  '🦅': 'Ravenclaw',
-  '🦡': 'Hufflepuff'
-};
-
-const HOUSE_COLORS = {
-  Gryffindor: 0xAE0001,
-  Slytherin: 0x2A623D,
-  Ravenclaw: 0x222F5B,
-  Hufflepuff: 0xFFB800
-};
-
-const HOUSE_DESCRIPTIONS = {
-  Gryffindor: 'Brave, daring, and chivalrous',
-  Slytherin: 'Ambitious, cunning, and resourceful',
-  Ravenclaw: 'Wise, creative, and intellectual',
-  Hufflepuff: 'Loyal, dedicated, and hardworking'
-};
+const QUESTIONS = [
+  {
+    question: "Which field excites you the most when thinking about the future?",
+    options: [
+      { label: "Building AI and Cloud systems", house: "Ravenclaw" }, // Tech/Intellectual
+      { label: "Leading a startup or managing teams", house: "Slytherin" }, // Management/Ambition
+      { label: "Creating digital art or storytelling", house: "Gryffindor" }, // Art/Brave Expression
+      { label: "Organizing community events", house: "Hufflepuff" } // Dedication
+    ]
+  },
+  {
+    question: "How do you handle a high-pressure situation, like a hackathon deadline?",
+    options: [
+      { label: "I take charge and push the team forward", house: "Gryffindor" },
+      { label: "I find the most efficient shortcut to win", house: "Slytherin" },
+      { label: "I analyze the problem and find a logical fix", house: "Ravenclaw" },
+      { label: "I support my teammates and stay focused", house: "Hufflepuff" }
+    ]
+  },
+  {
+    question: "Which philosophical outlook resonates with you?",
+    options: [
+      { label: "Knowledge is the ultimate power", house: "Ravenclaw" },
+      { label: "The end justifies the means", house: "Slytherin" },
+      { label: "Action is better than inaction", house: "Gryffindor" },
+      { label: "Equality and fairness for all", house: "Hufflepuff" }
+    ]
+  }
+];
 
 async function createSortingMessage(interaction) {
   const embed = new EmbedBuilder()
-    .setTitle('🎭 The Sorting Ceremony')
-    .setDescription(
-      'Choose your house by reacting with the corresponding emoji:\n\n' +
-      '🦁 Gryffindor - For the brave and daring\n' +
-      '🐍 Slytherin - For the ambitious and cunning\n' +
-      '🦅 Ravenclaw - For the wise and creative\n' +
-      '🦡 Hufflepuff - For the loyal and hardworking'
-    )
+    .setTitle('🎭 The Sorting Ceremony Quiz')
+    .setDescription('Welcome! To find your place in CloudCraft, you must complete the personality assessment. Ready to begin?')
     .setColor(0x9b59b6);
 
-  const message = await interaction.reply({ 
-    embeds: [embed], 
-    fetchReply: true 
-  });
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('start_sorting_quiz')
+      .setLabel('Start Quiz')
+      .setStyle(ButtonStyle.Primary)
+  );
 
-  // Add reactions
-  await message.react('🦁');
-  await message.react('🐍');
-  await message.react('🦅');
-  await message.react('🦡');
+  await interaction.reply({ embeds: [embed], components: [row] });
 }
 
-async function handleSortingReaction(reaction, user, db) {
-  const house = HOUSE_EMOJIS[reaction.emoji.name];
-  if (!house) return;
+async function runQuiz(interaction, db) {
+  let currentQuestion = 0;
+  const scores = { Gryffindor: 0, Slytherin: 0, Ravenclaw: 0, Hufflepuff: 0 };
 
-  // Check if user is already sorted
-  const row = await new Promise((resolve) => {
-    db.get('SELECT house FROM house_members WHERE user_id = ?', [user.id], (err, row) => {
-      resolve(row);
+  const askQuestion = async (int) => {
+    if (currentQuestion >= QUESTIONS.length) {
+      return finishQuiz(int, scores, db);
+    }
+
+    const q = QUESTIONS[currentQuestion];
+    const embed = new EmbedBuilder()
+      .setTitle(`Question ${currentQuestion + 1}/${QUESTIONS.length}`)
+      .setDescription(q.question)
+      .setColor(0x3498db);
+
+    const row = new ActionRowBuilder().addComponents(
+      q.options.map((opt, i) => 
+        new ButtonBuilder()
+          .setCustomId(`quiz_ans_${i}`)
+          .setLabel(opt.label)
+          .setStyle(ButtonStyle.Secondary)
+      )
+    );
+
+    const msg = await int.editReply({ embeds: [embed], components: [row] });
+    
+    const collector = msg.createMessageComponentCollector({ 
+      filter: i => i.user.id === interaction.user.id, 
+      time: 60000, 
+      max: 1 
     });
-  });
 
-  if (row) return;
+    collector.on('collect', async (i) => {
+      const choice = q.options[parseInt(i.customId.split('_')[2])];
+      scores[choice.house]++;
+      currentQuestion++;
+      await i.deferUpdate();
+      askQuestion(int);
+    });
+  };
 
-  // Sort user into house
-  db.run('INSERT INTO house_members (user_id, house) VALUES (?, ?)', [user.id, house]);
-
-  // Send confirmation message
-  const embed = new EmbedBuilder()
-    .setTitle(`Welcome to ${house}!`)
-    .setDescription(HOUSE_DESCRIPTIONS[house])
-    .setColor(HOUSE_COLORS[house])
-    .setThumbnail(`https://hogwarts-assets.com/${house.toLowerCase()}.png`);
-
-  const channel = reaction.message.channel;
-  await channel.send({ 
-    content: `<@${user.id}>`,
-    embeds: [embed] 
-  });
+  await askQuestion(interaction);
 }
 
-module.exports = {
-  createSortingMessage,
-  handleSortingReaction,
-  HOUSE_EMOJIS
-};
+async function finishQuiz(interaction, scores, db) {
+  // Find house with highest score
+  const sortedHouse = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
+  
+  const member = interaction.member;
+  const role = interaction.guild.roles.cache.find(r => r.name === sortedHouse);
+
+  // Update Database
+  db.run('INSERT OR REPLACE INTO house_members (user_id, house) VALUES (?, ?)', [member.id, sortedHouse]);
+
+  // Assign Role
+  if (role) {
+    await member.roles.add(role).catch(console.error);
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle(`🎉 Result: ${sortedHouse}!`)
+    .setDescription(`Based on your interests in tech, management, and philosophy, you have been sorted into **${sortedHouse}**!`)
+    .setColor(role ? role.color : 0x2ecc71);
+
+  await interaction.editReply({ embeds: [embed], components: [] });
+}
+
+module.exports = { createSortingMessage, runQuiz };

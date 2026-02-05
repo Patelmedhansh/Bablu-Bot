@@ -21,6 +21,13 @@ const TABLES = {
         streak INTEGER DEFAULT 0
       )
     `,
+
+    USERS: `
+      CREATE TABLE IF NOT EXISTS users (
+        user_id TEXT PRIMARY KEY,
+        join_date DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `,
   
     QUIZ_HISTORY: `
       CREATE TABLE IF NOT EXISTS quiz_history (
