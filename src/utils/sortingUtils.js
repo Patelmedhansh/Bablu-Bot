@@ -4,10 +4,10 @@ const QUESTIONS = [
   {
     question: "Which field excites you the most when thinking about the future?",
     options: [
-      { label: "Building AI and Cloud systems", house: "Ravenclaw" }, // Tech/Intellectual
-      { label: "Leading a startup or managing teams", house: "Slytherin" }, // Management/Ambition
-      { label: "Creating digital art or storytelling", house: "Gryffindor" }, // Art/Brave Expression
-      { label: "Organizing community events", house: "Hufflepuff" } // Dedication
+      { label: "Building AI and Cloud systems", house: "Ravenclaw" }, 
+      { label: "Leading a startup or managing teams", house: "Slytherin" }, 
+      { label: "Creating digital art or storytelling", house: "Gryffindor" }, 
+      { label: "Organizing community events", house: "Hufflepuff" } 
     ]
   },
   {
@@ -94,23 +94,44 @@ async function finishQuiz(interaction, scores, db) {
   // Find house with highest score
   const sortedHouse = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
   
-  const member = interaction.member;
-  const role = interaction.guild.roles.cache.find(r => r.name === sortedHouse);
+  try {
+    // 1. Fetch the latest member data from the guild to ensure proper role assignment
+    const member = await interaction.guild.members.fetch(interaction.user.id);
+    
+    // 2. Find the role by name as it appears in your server
+    const role = interaction.guild.roles.cache.find(r => r.name === sortedHouse);
 
-  // Update Database
-  db.run('INSERT OR REPLACE INTO house_members (user_id, house) VALUES (?, ?)', [member.id, sortedHouse]);
+    if (role) {
+      // 3. Attempt to add the role and log the outcome
+      await member.roles.add(role);
+      console.log(`✅ Successfully assigned role ${sortedHouse} to ${member.user.tag}`);
+    } else {
+      console.error(`❌ Role named "${sortedHouse}" not found in server.`);
+    }
 
-  // Assign Role
-  if (role) {
-    await member.roles.add(role).catch(console.error);
+    // 4. Update the database record for the user
+    db.run('INSERT OR REPLACE INTO house_members (user_id, house) VALUES (?, ?)', [member.id, sortedHouse]);
+
+    const embed = new EmbedBuilder()
+      .setTitle(`🎉 Result: ${sortedHouse}!`)
+      .setDescription(`Based on your interests in tech, management, and philosophy, you have been sorted into **${sortedHouse}**!`)
+      .setColor(role ? role.color : 0x2ecc71);
+
+    await interaction.editReply({ embeds: [embed], components: [] });
+
+  } catch (error) {
+    console.error(`❌ Error assigning role in finishQuiz: ${error.message}`);
+    
+    // Inform the user if there is a permission failure
+    const errorDescription = error.message.includes('Missing Permissions')
+      ? "I don't have permission to manage roles. Please ensure my role is at the top of the list!"
+      : "An error occurred while processing your result.";
+
+    await interaction.editReply({ 
+      content: errorDescription, 
+      components: [] 
+    });
   }
-
-  const embed = new EmbedBuilder()
-    .setTitle(`🎉 Result: ${sortedHouse}!`)
-    .setDescription(`Based on your interests in tech, management, and philosophy, you have been sorted into **${sortedHouse}**!`)
-    .setColor(role ? role.color : 0x2ecc71);
-
-  await interaction.editReply({ embeds: [embed], components: [] });
 }
 
 module.exports = { createSortingMessage, runQuiz };
